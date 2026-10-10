@@ -15,10 +15,32 @@ export interface VaaniEvent {
   entities: Record<string, unknown>;
 }
 
+const present = (v: unknown) => v !== undefined && v !== null && v !== "";
+
+/** Looks for the first matching key, at the top level first and then up to 3 levels deep. */
 const pick = (o: any, ...keys: string[]) => {
-  for (const k of keys) if (o?.[k] !== undefined && o[k] !== null && o[k] !== "") return o[k];
-  return null;
+  for (const k of keys) if (present(o?.[k])) return o[k];
+  const walk = (node: any, depth: number): unknown => {
+    if (!node || typeof node !== "object" || depth > 3) return null;
+    for (const k of keys) if (present(node[k])) return node[k];
+    for (const v of Object.values(node)) {
+      const hit = walk(v, depth + 1);
+      if (present(hit)) return hit;
+    }
+    return null;
+  };
+  return walk(o, 0);
 };
+
+/** Key structure only (no values), safe to log when a payload is not recognised. */
+export function shape(o: any, depth = 0): unknown {
+  if (Array.isArray(o)) return [o.length ? shape(o[0], depth + 1) : "empty"];
+  if (o && typeof o === "object") {
+    if (depth > 3) return "{...}";
+    return Object.fromEntries(Object.entries(o).map(([k, v]) => [k, shape(v, depth + 1)]));
+  }
+  return typeof o;
+}
 
 export function parseTranscript(raw: string) {
   return raw
@@ -39,7 +61,7 @@ export function parseVaani(body: any): VaaniEvent {
   const dur = pick(d, "call_duration", "duration_ms");
   return {
     event,
-    callId: String(pick(d, "call_id", "id", "callId", "session_id") ?? ""),
+    callId: String(pick(d, "call_id", "callId", "session_id", "sessionId", "call_uuid", "uuid", "id") ?? ""),
     callerNumber: pick(d, "caller_number", "from_number", "from", "customer_number", "phone_number"),
     startedAt: pick(d, "call_started_at", "start_time", "started_at", "call_start_time"),
     endedAt: pick(d, "call_ended_at", "end_time", "ended_at", "call_end_time"),

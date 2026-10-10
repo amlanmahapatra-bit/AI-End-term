@@ -9,10 +9,19 @@ const td = { padding: "6px 8px", borderBottom: "1px solid #f5f5f4", verticalAlig
 
 export default async function Dashboard() {
   const sb = db();
-  const [{ data: days }, { data: calls }] = await Promise.all([
+  const [{ data: days, error: dayErr }, { data: calls }] = await Promise.all([
     sb.from("daily_metrics").select("*").order("day", { ascending: false }).limit(30),
     sb.from("calls").select("*").order("started_at", { ascending: false }).limit(25),
   ]);
+
+  if (dayErr) {
+    return (
+      <main style={{ maxWidth: 700, margin: "0 auto", padding: "24px 16px" }}>
+        <h1>Database error</h1>
+        <p>The dashboard could not read from Supabase: {dayErr.message}</p>
+      </main>
+    );
+  }
 
   const sum = (k: string) => (days ?? []).reduce((a, d: any) => a + Number(d[k] ?? 0), 0);
   const total = { calls: sum("calls"), after: sum("after_hours_calls"), qualified: sum("qualified"), booked: sum("booked"), showed: sum("showed_up"), won: sum("won"), value: sum("won_value_inr"), cost: sum("cost_inr") };

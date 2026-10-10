@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { parseVaani } from "@/lib/vaani";
+import { parseVaani, shape } from "@/lib/vaani";
 import { handleCallStarted, handlePostProcessing } from "@/lib/pipeline";
 
 export const runtime = "nodejs";
@@ -13,10 +13,17 @@ export async function POST(req: Request) {
   }
 
   const body = await req.json().catch(() => null);
-  if (!body) return NextResponse.json({ error: "invalid json" }, { status: 400 });
+  if (!body) {
+    console.error("webhook: body was not valid JSON, content-type:", req.headers.get("content-type"));
+    return NextResponse.json({ error: "invalid json" }, { status: 400 });
+  }
 
   const ev = parseVaani(body);
-  if (!ev.callId) return NextResponse.json({ error: "missing call id" }, { status: 400 });
+  console.log("webhook event:", ev.event, "call:", ev.callId, "payload shape:", JSON.stringify(shape(body)));
+  if (!ev.callId) {
+    console.error("webhook: no call id found. payload shape:", JSON.stringify(shape(body)));
+    return NextResponse.json({ error: "missing call id" }, { status: 400 });
+  }
 
   try {
     if (ev.event === "call_started") {
