@@ -61,7 +61,8 @@ const missing = transcripts.filter((t) => !cache[t.id]).map((t) => t.id);
 if (missing.length && !process.env.ALLOW_PARTIAL) throw new Error(`Not classified: ${missing.join(", ")}. Re-run to resume, or set ALLOW_PARTIAL=1.`);
 if (missing.length) console.log(`Partial import, skipping: ${missing.join(", ")}. Re-run later to add them (SQL uses on conflict do nothing).`);
 
-const q = (s) => `'${String(s ?? "").replace(/'/g, "''")}'`;
+// E'...' strings with \n escapes keep every row on ONE line, so partial selection or line-based splitting in the SQL editor can't break a string.
+const q = (s) => `E'${String(s ?? "").replace(/\\/g, "\\\\").replace(/'/g, "''").replace(/\r?\n/g, "\\n")}'`;
 const rows = transcripts.filter((t) => cache[t.id]).map((t) => {
   const m = parseMeta(t.meta);
   const c = cache[t.id];
@@ -85,11 +86,7 @@ create table if not exists public.imported_enquiries (
 );
 alter table public.imported_enquiries enable row level security;
 
-insert into public.imported_enquiries
-  (id, received_at, after_hours, duration_sec, classification, fit_reason, asked_pricing, handoff_note, transcript)
-values
-${rows.join(",\n")}
-on conflict (id) do nothing;
+${rows.map((r) => `insert into public.imported_enquiries (id, received_at, after_hours, duration_sec, classification, fit_reason, asked_pricing, handoff_note, transcript) values ${r} on conflict (id) do nothing;`).join("\n")}
 `;
 writeFileSync("supabase/migrations/002_september_baseline.sql", sql);
 console.log(`Wrote supabase/migrations/002_september_baseline.sql (${rows.length} rows)`);
