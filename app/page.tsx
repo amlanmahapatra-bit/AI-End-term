@@ -3,19 +3,57 @@ import { db } from "@/lib/supabase";
 export const dynamic = "force-dynamic";
 
 const inr = (n: number) => `₹${n.toLocaleString("en-IN", { maximumFractionDigits: 2 })}`;
-const card = { background: "#fff", border: "1px solid #e7e5e4", borderRadius: 8, padding: "12px 16px" } as const;
-const th = { textAlign: "left", padding: "6px 8px", color: "#78716c", fontWeight: 500, borderBottom: "1px solid #e7e5e4" } as const;
-const td = { padding: "6px 8px", borderBottom: "1px solid #f5f5f4", verticalAlign: "top" } as const;
+const ist = (iso?: string | null) =>
+  iso ? new Date(iso).toLocaleString("en-IN", { timeZone: "Asia/Kolkata", day: "numeric", month: "short", hour: "numeric", minute: "2-digit" }) : "";
+
+const LABEL: Record<string, string> = { qualified: "Qualified", not_fit: "Not a fit", complaint: "Complaint", unclear: "Unclear" };
+
+function Badge({ value }: { value?: string | null }) {
+  const v = value ?? "unclear";
+  return <span className={`badge b-${v}`}>{LABEL[v] ?? v}</span>;
+}
+
+function Kpi({ label, value, sub }: { label: string; value: string; sub?: string }) {
+  return (
+    <div className="card">
+      <div className="label">{label}</div>
+      <div className="value">{value}</div>
+      {sub && <div className="sub">{sub}</div>}
+    </div>
+  );
+}
 
 export default async function Dashboard() {
   const sb = db();
   const [{ data: days, error: dayErr }, { data: calls }, { data: sept }] = await Promise.all([
     sb.from("daily_metrics").select("*").order("day", { ascending: false }).limit(30),
-    sb.from("calls").select("*").order("started_at", { ascending: false }).limit(25),
+    sb.from("calls").select("*").order("started_at", { ascending: false }).limit(10),
     // September baseline lives in its own table so it never mixes with live totals or cost.
     sb.from("imported_enquiries").select("*").order("received_at", { ascending: true }),
   ]);
-  const base = {
+
+  if (dayErr) {
+    return (
+      <main className="wrap">
+        <h2>Database error</h2>
+        <p className="lead">The dashboard could not read from Supabase: {dayErr.message}</p>
+      </main>
+    );
+  }
+
+  const sum = (k: string) => (days ?? []).reduce((a, d: any) => a + Number(d[k] ?? 0), 0);
+  const t = { calls: sum("calls"), after: sum("after_hours_calls"), qualified: sum("qualified"), booked: sum("booked"), showed: sum("showed_up"), won: sum("won"), cost: sum("cost_inr") };
+  const top = Math.max(t.calls, 1);
+
+  const funnel: [string, number][] = [
+    ["Calls answered", t.calls],
+    ["Qualified", t.qualified],
+    ["Consultation booked", t.booked],
+    ["Showed up", t.showed],
+    ["Project won", t.won],
+  ];
+
+  const s = {
     total: sept?.length ?? 0,
     after: sept?.filter((r: any) => r.after_hours).length ?? 0,
     qualified: sept?.filter((r: any) => r.classification === "qualified").length ?? 0,
@@ -25,121 +63,133 @@ export default async function Dashboard() {
     pricing: sept?.filter((r: any) => r.asked_pricing).length ?? 0,
   };
 
-  if (dayErr) {
-    return (
-      <main style={{ maxWidth: 700, margin: "0 auto", padding: "24px 16px" }}>
-        <h1>Database error</h1>
-        <p>The dashboard could not read from Supabase: {dayErr.message}</p>
-      </main>
-    );
-  }
-
-  const sum = (k: string) => (days ?? []).reduce((a, d: any) => a + Number(d[k] ?? 0), 0);
-  const total = { calls: sum("calls"), after: sum("after_hours_calls"), qualified: sum("qualified"), booked: sum("booked"), showed: sum("showed_up"), won: sum("won"), value: sum("won_value_inr"), cost: sum("cost_inr") };
-  const tiles: [string, string][] = [
-    ["Calls answered", String(total.calls)],
-    ["After-hours calls", String(total.after)],
-    ["Qualified", String(total.qualified)],
-    ["Consultations booked", String(total.booked)],
-    ["Showed up", String(total.showed)],
-    ["Projects won", `${total.won} (${inr(total.value)})`],
-    ["Total running cost", inr(total.cost)],
-    ["Cost per qualified lead", total.qualified ? inr(total.cost / total.qualified) : "n/a"],
-    ["Cost per booking", total.booked ? inr(total.cost / total.booked) : "n/a"],
-  ];
-
   return (
-    <main style={{ maxWidth: 1100, margin: "0 auto", padding: "24px 16px" }}>
-      <h1 style={{ margin: "0 0 4px" }}>Aangan Studio · Call agent</h1>
-      <p style={{ color: "#78716c", margin: "0 0 20px" }}>Last 30 days. Cost = voice minutes + AI classification.</p>
-
-      <section style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(170px, 1fr))", gap: 10 }}>
-        {tiles.map(([label, value]) => (
-          <div key={label} style={card}>
-            <div style={{ color: "#78716c", fontSize: 12 }}>{label}</div>
-            <div style={{ fontSize: 22, fontWeight: 600 }}>{value}</div>
+    <>
+      <header className="top">
+        <div className="top-in">
+          <div className="brand">
+            <span className="logo" />
+            <span>Aangan Studio <small>· Call agent</small></span>
           </div>
-        ))}
-      </section>
+          <span className="live"><span className="dot" /> Agent live · answers 24/7</span>
+        </div>
+      </header>
 
-      <h2 style={{ marginTop: 28 }}>By day</h2>
-      <div style={{ overflowX: "auto" }}>
-        <table style={{ borderCollapse: "collapse", width: "100%", fontSize: 14 }}>
-          <thead><tr>{["Day", "Calls", "After hours", "Qualified", "Booked", "Showed", "Won", "Cost"].map((h) => <th key={h} style={th}>{h}</th>)}</tr></thead>
-          <tbody>
-            {(days ?? []).map((d: any) => (
-              <tr key={d.day}>
-                <td style={td}>{d.day}</td><td style={td}>{d.calls}</td><td style={td}>{d.after_hours_calls}</td><td style={td}>{d.qualified}</td>
-                <td style={td}>{d.booked}</td><td style={td}>{d.showed_up}</td><td style={td}>{d.won}</td><td style={td}>{inr(Number(d.cost_inr ?? 0))}</td>
-              </tr>
-            ))}
-            {!days?.length && <tr><td style={td} colSpan={8}>No calls yet.</td></tr>}
-          </tbody>
-        </table>
-      </div>
+      <main className="wrap">
+        <section className="hero">
+          <h1>Every call answered. Every lead qualified.</h1>
+          <p>An AI front desk that picks up in seconds, asks the right questions, books the consultation and hands the designer the full brief. Results and running cost, in one place.</p>
+          <div className="chips">
+            <span className="chip">Answers day and night</span>
+            <span className="chip">Qualifies against Nikhil&apos;s rubric</span>
+            <span className="chip">Books and sends the invite</span>
+            <span className="chip cut">Never quotes a price</span>
+          </div>
+        </section>
 
-      <h2 style={{ marginTop: 28 }}>Recent calls</h2>
-      <div style={{ overflowX: "auto" }}>
-        <table style={{ borderCollapse: "collapse", width: "100%", fontSize: 14 }}>
-          <thead><tr>{["Started", "Caller", "Result", "Why", "Slot", "After hrs", "Cost"].map((h) => <th key={h} style={th}>{h}</th>)}</tr></thead>
-          <tbody>
-            {(calls ?? []).map((c: any) => (
-              <tr key={c.id}>
-                <td style={td}>{c.started_at ? new Date(c.started_at).toLocaleString("en-IN", { timeZone: "Asia/Kolkata" }) : ""}</td>
-                <td style={td}>{c.caller_number ?? ""}</td>
-                <td style={td}>{c.classification ?? c.status}</td>
-                <td style={td}>{c.fit_reason ?? ""}</td>
-                <td style={td}>{c.booked_slot ? new Date(c.booked_slot).toLocaleString("en-IN", { timeZone: "Asia/Kolkata" }) : ""}</td>
-                <td style={td}>{c.after_hours ? "Yes" : "No"}</td>
-                <td style={td}>{inr(Number(c.cost_voice_inr ?? 0) + Number(c.cost_llm_inr ?? 0))}</td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
+        <section className="grid kpis">
+          <Kpi label="Calls answered" value={String(t.calls)} sub="Last 30 days" />
+          <Kpi label="After-hours calls" value={String(t.after)} sub="Outside 10am to 7pm" />
+          <Kpi label="Qualified leads" value={String(t.qualified)} sub={t.calls ? `${Math.round((t.qualified / t.calls) * 100)}% of calls` : "No calls yet"} />
+          <Kpi label="Consultations booked" value={String(t.booked)} sub={t.qualified ? `${Math.round((t.booked / t.qualified) * 100)}% of qualified` : ""} />
+        </section>
 
-      <h2 style={{ marginTop: 36, marginBottom: 4 }}>September baseline (before the agent)</h2>
-      <p style={{ color: "#78716c", margin: "0 0 12px" }}>
-        The 20 real phone enquiries from September 2026, classified by the same AI step. Kept separate: not included in the totals or cost above.
-      </p>
-      {!sept?.length ? (
-        <p style={{ color: "#78716c" }}>Not loaded yet. Run supabase/migrations/002_september_baseline.sql in the Supabase SQL Editor.</p>
-      ) : (
-        <>
-          <section style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(150px, 1fr))", gap: 10 }}>
-            {([
-              ["Phone enquiries", base.total],
-              ["After hours (outside 10-7)", base.after],
-              ["Would qualify", base.qualified],
-              ["Not a fit", base.notFit],
-              ["Complaint", base.complaint],
-              ["Unclear / missed", base.unclear],
-              ["Asked about price", base.pricing],
-            ] as [string, number][]).map(([label, value]) => (
-              <div key={label} style={card}>
-                <div style={{ color: "#78716c", fontSize: 12 }}>{label}</div>
-                <div style={{ fontSize: 22, fontWeight: 600 }}>{value}</div>
+        <section className="grid kpis" style={{ marginTop: 14 }}>
+          <Kpi label="Running cost" value={inr(t.cost)} sub="Voice minutes + AI" />
+          <Kpi label="Cost per qualified lead" value={t.qualified ? inr(t.cost / t.qualified) : "n/a"} />
+          <Kpi label="Cost per booking" value={t.booked ? inr(t.cost / t.booked) : "n/a"} />
+          <Kpi label="Projects won" value={String(t.won)} sub={t.won ? "Tracked from bookings" : ""} />
+        </section>
+
+        <h2>From call to project</h2>
+        <p className="lead">How far each call gets.</p>
+        <div className="card funnel">
+          {funnel.map(([name, n]) => (
+            <div className="frow" key={name}>
+              <span>{name}</span>
+              <div className="track"><div className="bar" style={{ width: `${(n / top) * 100}%` }} /></div>
+              <span className="n">{n}</span>
+            </div>
+          ))}
+        </div>
+
+        <h2>Recent calls</h2>
+        <p className="lead">Latest 10 calls, newest first.</p>
+        <div className="card tablecard">
+          {calls?.length ? (
+            <div className="scroll">
+              <table>
+                <thead><tr><th>Time (IST)</th><th>Caller</th><th>Result</th><th>Reason</th><th>Slot</th><th>Cost</th></tr></thead>
+                <tbody>
+                  {calls.map((c: any) => (
+                    <tr key={c.id}>
+                      <td className="num">{ist(c.started_at)}{c.after_hours ? " · after hours" : ""}</td>
+                      <td className="num">{c.caller_number ?? ""}</td>
+                      <td><Badge value={c.classification} /></td>
+                      <td className="why">{c.fit_reason ?? ""}</td>
+                      <td className="num">{ist(c.booked_slot)}</td>
+                      <td className="num">{inr(Number(c.cost_voice_inr ?? 0) + Number(c.cost_llm_inr ?? 0))}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          ) : (
+            <div className="empty">No live calls yet. Make a test call and it appears here within a minute.</div>
+          )}
+        </div>
+
+        <h2>September, before the agent</h2>
+        <p className="lead">Real phone enquiries from September 2026, classified by the same AI. Kept separate from the live numbers above.</p>
+        {!sept?.length ? (
+          <div className="card empty">Baseline data not loaded yet.</div>
+        ) : (
+          <>
+            <div className="split">
+              <div className="card">
+                <div className="label">What came in</div>
+                <ul className="list">
+                  <li><span>Phone enquiries analysed</span><b>{s.total}</b></li>
+                  <li><span>Arrived outside 10am to 7pm</span><b>{s.after}</b></li>
+                  <li><span>Asked about price</span><b>{s.pricing}</b></li>
+                </ul>
               </div>
-            ))}
-          </section>
-          <div style={{ overflowX: "auto", marginTop: 12 }}>
-            <table style={{ borderCollapse: "collapse", width: "100%", fontSize: 14 }}>
-              <thead><tr>{["ID", "Received", "After hrs", "Result", "Why"].map((h) => <th key={h} style={th}>{h}</th>)}</tr></thead>
-              <tbody>
-                {sept.map((r: any) => (
-                  <tr key={r.id}>
-                    <td style={td}>{r.id}</td>
-                    <td style={td}>{new Date(r.received_at).toLocaleString("en-IN", { timeZone: "Asia/Kolkata" })}</td>
-                    <td style={td}>{r.after_hours ? "Yes" : "No"}</td>
-                    <td style={td}>{r.classification}</td>
-                    <td style={td}>{r.fit_reason}</td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        </>
-      )}
-    </main>
+              <div className="card">
+                <div className="label">What they were</div>
+                <ul className="list">
+                  <li><span>Worth a designer&apos;s time</span><b>{s.qualified}</b></li>
+                  <li><span>Not a fit</span><b>{s.notFit}</b></li>
+                  <li><span>Complaints, missed or unclear</span><b>{s.complaint + s.unclear}</b></li>
+                </ul>
+              </div>
+            </div>
+            <div className="card tablecard" style={{ marginTop: 14 }}>
+              <div className="scroll">
+                <table>
+                  <thead><tr><th>ID</th><th>Received (IST)</th><th>Result</th><th>Deciding reason</th></tr></thead>
+                  <tbody>
+                    {sept.map((r: any) => (
+                      <tr key={r.id}>
+                        <td className="num">{r.id}</td>
+                        <td className="num">{ist(r.received_at)}{r.after_hours ? " · after hours" : ""}</td>
+                        <td><Badge value={r.classification} /></td>
+                        <td className="why">{r.fit_reason}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </>
+        )}
+
+        <footer className="foot">
+          <span>Voice: Vaani AI</span>
+          <span>Classification: Gemini</span>
+          <span>Handoff: email + calendar invite</span>
+          <span>The agent never quotes a price. Pricing stays with the designer.</span>
+        </footer>
+      </main>
+    </>
   );
 }

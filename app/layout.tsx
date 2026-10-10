@@ -1,11 +1,15 @@
 import type { ReactNode } from "react";
+import "./globals.css";
 
-export const metadata = { title: "Aangan Call Agent", description: "Calls answered, leads qualified, cost to run" };
+export const metadata = {
+  title: "Aangan Call Agent",
+  description: "Every enquiry answered, qualified and booked. Live results and running cost.",
+};
 
 export default function RootLayout({ children }: { children: ReactNode }) {
   return (
     <html lang="en">
-      <body style={{ margin: 0, fontFamily: "system-ui, sans-serif", background: "#fafaf9", color: "#1c1917" }}>{children}</body>
+      <body>{children}</body>
     </html>
   );
 }
