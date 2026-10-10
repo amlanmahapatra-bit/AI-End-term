@@ -16,5 +16,71 @@
   "fit_reason": "Criterion 2: Nashik is outside Pune/PCMC",
   "asked_pricing": false,
   "handoff_note": "Caller: Suresh Patil\nSpace: Home office and study\nLocation: Nashik\nScope: Redo home office and study\nTimeline: Not discussed\nDecision-maker: Suresh Patil\nBudget: None volunteered\nNext step: Not a fit due to service area, no further human action needed"
+ },
+ "T04": {
+  "classification": "not_fit",
+  "fit_reason": "Criterion 1: Caller wants ideas and styling advice only, not full design and execution",
+  "asked_pricing": false,
+  "handoff_note": "Caller: Unidentified prospective client\nSpace: Living room, dimensions not provided\nLocation: Not mentioned\nScope: Styling ideas, colour suggestions, and layout advice only\nTimeline: Exploring options for now, not executing immediately\nDecision-maker: Not confirmed\nBudget: None mentioned\nNext step: Not a fit under Criterion 1; no designer action required"
+ },
+ "T05": {
+  "classification": "qualified",
+  "fit_reason": "Passes all five criteria: full home redesign in Koregaon Park within a viable 4-month timeline",
+  "asked_pricing": false,
+  "handoff_note": "Aarti Mehta (referred by Vikram Agarwal)\n4BHK apartment, 2,400 sq ft carpet\nKoregaon Park, Pune\nComplete redesign of flooring, kitchen, and all 4 bedrooms\nMove-in by February (approx 4 months), site already vacant\nDecision-maker is caller Aarti Mehta\nNo budget mentioned by caller\nFollow up to schedule site visit consultation early next week"
+ },
+ "T06": {
+  "classification": "qualified",
+  "fit_reason": "Criteria 1-5: Full commercial office fitout in Baner within service area, realistic December timeline, and founder on call",
+  "asked_pricing": false,
+  "handoff_note": "Caller is a startup founder looking to fit out a new office.\nSpace is an 800 sq ft bare shell commercial property.\nSite location is in Baner, Pune.\nScope covers end-to-end fitout with 20 workstations, cabin, meeting room, and break area.\nTimeline requires the office to be operational by December.\nCaller confirmed they are the founder and sole decision-maker.\nNo budget figure was volunteered during the call.\nRecommended next step is to schedule an initial consultation."
+ },
+ "T07": {
+  "classification": "not_fit",
+  "fit_reason": "Criterion 3: Project completion requested before Diwali in 3 weeks, which is well under our minimum execution timeline.",
+  "asked_pricing": false,
+  "handoff_note": "Caller: Unidentified caller\nSpace: Living room and kitchen, size unspecified\nLocation: Not disclosed\nScope: Living room and kitchen redesign\nTimeline: Wanted project completed before Diwali in 3 weeks\nDecision-maker: Caller, authority unconfirmed\nBudget: None stated by caller\nNext step: Not fit due to timeline; no action needed unless caller calls back"
+ },
+ "T08": {
+  "classification": "unclear",
+  "fit_reason": "Missed call outside office hours; no conversation to classify",
+  "asked_pricing": false,
+  "handoff_note": "Missed call. No voicemail. Number associated with Nanded City area (Pune). Call-back\nattempted following morning at 10:15am — no answer."
+ },
+ "T09": {
+  "classification": "complaint",
+  "fit_reason": "Existing client reporting an unresponsive designer on an active project",
+  "asked_pricing": false,
+  "handoff_note": "Caller is existing client Sheetal Deshpande\nSpace is a 2BHK flat of unspecified size\nLocated in Viman Nagar\nOngoing interior project assigned to Aryan\nIn progress for three months with five days of no response\nCaller Sheetal Deshpande is the decision-maker\nNo budget mentioned by caller\nEscalate immediately for Nikhil or senior staff to call back within 15 minutes"
+ },
+ "T10": {
+  "classification": "not_fit",
+  "fit_reason": "Criterion 4: Volunteered budget is clearly below the threshold for the described scope.",
+  "asked_pricing": false,
+  "handoff_note": "Unnamed caller\n1BHK apartment of 550 sq ft\nLocated in Kharadi\nKitchen and one bedroom redesign with full execution\nTimeline not specified\nDecision-maker not specified\nCaller specified a maximum budget insufficient for project scope\nNot a fit due to budget misalignment, no follow-up needed"
+ },
+ "T11": {
+  "classification": "qualified",
+  "fit_reason": "Criterion 1 and 2: Rented 2BHK redesign in Baner with no structural changes meets scope and location criteria.",
+  "asked_pricing": false,
+  "handoff_note": "Caller: Tenant seeking design for rented flat\nSpace: 2BHK rented apartment, size not specified\nLocation: Baner, Pune\nScope: Non-structural redesign of living room, bedroom, kitchen\nTimeline: Not specified, site currently occupied\nDecision-maker: Caller authorised, landlord already approved\nBudget: None volunteered by caller\nNext step: Call to agree on consultation date and time"
+ },
+ "T12": {
+  "classification": "qualified",
+  "fit_reason": "Passes all five criteria: full end-to-end residential project in Kalyani Nagar, realistic move-in timeline for March next year, and owner on the call.",
+  "asked_pricing": false,
+  "handoff_note": "Caller is Anand Sharma.\nNew empty villa of 5,500 sq ft across ground plus two floors.\nLocated in Kalyani Nagar, Pune.\nScope is complete end-to-end design and execution.\nTimeline is to move in by March next year.\nDecision-maker is the caller himself.\nNo budget mentioned by caller.\nNext step is to check calendar and revert by end of day to book site visit."
+ },
+ "T13": {
+  "classification": "qualified",
+  "fit_reason": "Passes all criteria: full execution scope for a 3BHK flat in Aundh within Pune service area.",
+  "asked_pricing": true,
+  "handoff_note": "Caller: Name not provided\nSpace: 3BHK flat, 1,100 sq ft\nLocation: Aundh\nScope: Kitchen, wardrobes in two bedrooms, living room\nTimeline: Not discussed on call\nDecision-maker: Caller\nBudget: None volunteered; repeatedly asked for ballpark pricing\nNext step: Call back to schedule consultation slot"
+ },
+ "T14": {
+  "classification": "qualified",
+  "fit_reason": "Criterion 2: Hadapsar is in Pune service area; Criterion 5: Parents are primary decision-makers and confirmed to attend consultation.",
+  "asked_pricing": false,
+  "handoff_note": "Caller inquiring on behalf of parents for new possession home.\nSpace is a 3BHK apartment, exact square footage not stated.\nLocated in Hadapsar, within Pune service area.\nScope is complete home interior design.\nTimeline was not specified during the call.\nDecision-makers are parents, confirmed to attend the consultation.\nNo budget was volunteered on the call.\nRecommended next step is to follow up to schedule a consultation."
  }
 }
