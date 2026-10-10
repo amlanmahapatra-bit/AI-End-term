@@ -47,7 +47,7 @@ Extending to WhatsApp and the web form: only the trigger changes; context, AI an
 1. Create Supabase project, run `supabase/migrations/001_init.sql` (edit the designer email first).
 2. Import the repo in Vercel and add the variables from `.env.example`. Paste secrets in Vercel, never in chat or git. Redeploy after changes.
 3. Create the Vaani agent from `vaani/agent-setup.md` and add the webhook.
-4. Check the Gemini model name in AI Studio and set `GEMINI_MODEL`.
+4. Set `GEMINI_MODEL=gemini-3.8-flash` (tested; `gemini-2.5-flash` is closed to new users).
 
 ## Evals
 

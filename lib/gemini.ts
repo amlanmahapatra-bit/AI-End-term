@@ -106,7 +106,7 @@ export async function classify(transcript: string, callDateIso: string): Promise
   if (!res.ok) throw new Error(`Gemini ${res.status}: ${(await res.text()).slice(0, 300)}`);
 
   const data = await res.json();
-  const text: string | undefined = data?.candidates?.[0]?.content?.parts?.[0]?.text;
+  const text: string | undefined = (data?.candidates?.[0]?.content?.parts ?? []).filter((p: any) => !p.thought && p.text).map((p: any) => p.text).join("");
   if (!text) throw new Error("Gemini returned no content");
   const result = JSON.parse(text) as LeadResult;
 
