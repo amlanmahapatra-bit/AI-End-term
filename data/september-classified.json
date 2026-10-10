@@ -1,0 +1,20 @@
+{
+ "T01": {
+  "classification": "qualified",
+  "fit_reason": "Criterion 1 to 5 passed: full 3BHK redesign in Kothrud with realistic March timeline and aligned decision-makers",
+  "asked_pricing": false,
+  "handoff_note": "Priya, referred by past client Shruti Joshi\n3BHK builder flat, 1,400 sq ft carpet\nDahanukar Colony, Kothrud, Pune\nFull redesign of kitchen, living room, and bedrooms with execution\nNeeds completion by March, relaxed timeline\nPriya and husband are owners and aligned to proceed\nBudget not mentioned\nCall back to schedule consultation"
+ },
+ "T02": {
+  "classification": "qualified",
+  "fit_reason": "Criterion 1 and Criterion 2 met: full 2BHK redesign in Wakad with complete execution scope.",
+  "asked_pricing": true,
+  "handoff_note": "Unnamed caller inquiring via Instagram\n2BHK residential flat measuring 950 sq ft\nLocated in Wakad\nFull redesign covering modular kitchen wardrobes living room and bedrooms\nDesign starting in October with move-in planned for November\nCaller appears to be the decision-maker\nNo budget volunteered though caller asked repeatedly for pricing\nNext step is to call back to fix consultation date and align on schedule"
+ },
+ "T03": {
+  "classification": "not_fit",
+  "fit_reason": "Criterion 2: Nashik is outside Pune/PCMC",
+  "asked_pricing": false,
+  "handoff_note": "Caller: Suresh Patil\nSpace: Home office and study\nLocation: Nashik\nScope: Redo home office and study\nTimeline: Not discussed\nDecision-maker: Suresh Patil\nBudget: None volunteered\nNext step: Not a fit due to service area, no further human action needed"
+ }
+}

@@ -9,10 +9,21 @@ const td = { padding: "6px 8px", borderBottom: "1px solid #f5f5f4", verticalAlig
 
 export default async function Dashboard() {
   const sb = db();
-  const [{ data: days, error: dayErr }, { data: calls }] = await Promise.all([
+  const [{ data: days, error: dayErr }, { data: calls }, { data: sept }] = await Promise.all([
     sb.from("daily_metrics").select("*").order("day", { ascending: false }).limit(30),
     sb.from("calls").select("*").order("started_at", { ascending: false }).limit(25),
+    // September baseline lives in its own table so it never mixes with live totals or cost.
+    sb.from("imported_enquiries").select("*").order("received_at", { ascending: true }),
   ]);
+  const base = {
+    total: sept?.length ?? 0,
+    after: sept?.filter((r: any) => r.after_hours).length ?? 0,
+    qualified: sept?.filter((r: any) => r.classification === "qualified").length ?? 0,
+    notFit: sept?.filter((r: any) => r.classification === "not_fit").length ?? 0,
+    complaint: sept?.filter((r: any) => r.classification === "complaint").length ?? 0,
+    unclear: sept?.filter((r: any) => r.classification === "unclear").length ?? 0,
+    pricing: sept?.filter((r: any) => r.asked_pricing).length ?? 0,
+  };
 
   if (dayErr) {
     return (
@@ -86,6 +97,49 @@ export default async function Dashboard() {
           </tbody>
         </table>
       </div>
+
+      <h2 style={{ marginTop: 36, marginBottom: 4 }}>September baseline (before the agent)</h2>
+      <p style={{ color: "#78716c", margin: "0 0 12px" }}>
+        The 20 real phone enquiries from September 2026, classified by the same AI step. Kept separate: not included in the totals or cost above.
+      </p>
+      {!sept?.length ? (
+        <p style={{ color: "#78716c" }}>Not loaded yet. Run supabase/migrations/002_september_baseline.sql in the Supabase SQL Editor.</p>
+      ) : (
+        <>
+          <section style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(150px, 1fr))", gap: 10 }}>
+            {([
+              ["Phone enquiries", base.total],
+              ["After hours (outside 10-7)", base.after],
+              ["Would qualify", base.qualified],
+              ["Not a fit", base.notFit],
+              ["Complaint", base.complaint],
+              ["Unclear / missed", base.unclear],
+              ["Asked about price", base.pricing],
+            ] as [string, number][]).map(([label, value]) => (
+              <div key={label} style={card}>
+                <div style={{ color: "#78716c", fontSize: 12 }}>{label}</div>
+                <div style={{ fontSize: 22, fontWeight: 600 }}>{value}</div>
+              </div>
+            ))}
+          </section>
+          <div style={{ overflowX: "auto", marginTop: 12 }}>
+            <table style={{ borderCollapse: "collapse", width: "100%", fontSize: 14 }}>
+              <thead><tr>{["ID", "Received", "After hrs", "Result", "Why"].map((h) => <th key={h} style={th}>{h}</th>)}</tr></thead>
+              <tbody>
+                {sept.map((r: any) => (
+                  <tr key={r.id}>
+                    <td style={td}>{r.id}</td>
+                    <td style={td}>{new Date(r.received_at).toLocaleString("en-IN", { timeZone: "Asia/Kolkata" })}</td>
+                    <td style={td}>{r.after_hours ? "Yes" : "No"}</td>
+                    <td style={td}>{r.classification}</td>
+                    <td style={td}>{r.fit_reason}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </>
+      )}
     </main>
   );
 }
