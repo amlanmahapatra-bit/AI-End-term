@@ -1,0 +1,28 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Aangan Component Map</title>
+<style>
+:root{--bg:#fafaf9;--fg:#1c1917;--card:#fff;--line:#e7e5e4;--accent:#0f766e;--cut:#b91c1c}
+@media (prefers-color-scheme:dark){:root{--bg:#1c1917;--fg:#fafaf9;--card:#292524;--line:#44403c;--accent:#2dd4bf;--cut:#f87171}}
+body{margin:0;padding:24px 16px;background:var(--bg);color:var(--fg);font-family:system-ui,sans-serif}
+main{max-width:1000px;margin:auto}
+.flow{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:12px}
+.box{background:var(--card);border:1px solid var(--line);border-radius:8px;padding:12px 14px}
+.box h3{margin:0 0 6px;color:var(--accent);font-size:14px;text-transform:uppercase;letter-spacing:.05em}
+.box ul{margin:0;padding-left:18px;font-size:14px}
+.cut{border-color:var(--cut)}.cut h3{color:var(--cut)}
+</style></head><body><main>
+<h1>Aangan call agent: component map</h1>
+<p>Trigger &rarr; Input &rarr; Context &rarr; Processing &rarr; AI &rarr; Output</p>
+<div class="flow">
+<div class="box"><h3>1 Trigger</h3><ul><li>Inbound call answered by Vaani agent</li><li>Webhook: call_started</li><li>Webhook: call_postprocessing</li></ul></div>
+<div class="box"><h3>2 Input</h3><ul><li>Transcript</li><li>Caller number, start/end</li><li>Recording URL, entities</li></ul></div>
+<div class="box"><h3>3 Context</h3><ul><li>qualified.md (rubric)</li><li>services.md</li></ul><p class="cut" style="border:0;margin:8px 0 0;font-size:13px;color:var(--cut)">pricing.md is never loaded</p></div>
+<div class="box"><h3>4 Processing</h3><ul><li>?token= auth, idempotent</li><li>Log to Supabase</li><li>After-hours flag (outside 10-7 IST)</li><li>Duration and cost</li></ul></div>
+<div class="box"><h3>5 AI</h3><ul><li>Gemini Flash, JSON mode</li><li>qualified / not_fit / complaint / unclear</li><li>8-line handoff note</li><li>Code-level price filter</li></ul></div>
+<div class="box"><h3>6 Output</h3><ul><li>Qualified: designer email (Claim / Reschedule / Booking) + HubSpot deal</li><li>Complaint: front-desk email</li><li>AI failure: raw transcript to front desk</li><li>Dashboard with cost</li></ul></div>
+</div>
+<div class="box cut" style="margin-top:16px"><h3>The Cut</h3><p style="margin:0;font-size:14px">The agent never quotes a price. It says: "Your designer will walk you through pricing on the consultation."</p></div>
+<div class="box" style="margin-top:12px"><h3>Where a human sits</h3><ul><li>Pricing: designer at the consultation, Nikhil owns the numbers</li><li>Site visits and dates: designer</li><li>Complaints: front desk or senior staff</li></ul></div>
+<div class="box" style="margin-top:12px"><h3>Extending</h3><p style="margin:0;font-size:14px">WhatsApp and the web form reuse Context, AI and Output; only the Trigger and Input change.</p></div>
+</main></body></html>

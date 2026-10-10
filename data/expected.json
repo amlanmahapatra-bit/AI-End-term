@@ -1,0 +1,12 @@
+{
+  "T01": { "classification": "qualified", "note": "3BHK Kothrud, owner, done by March" },
+  "T02": { "classification": "qualified", "asked_pricing": true, "note": "2BHK Wakad, asks the price twice" },
+  "T03": { "classification": "not_fit", "note": "Nashik, outside service area" },
+  "T04": { "classification": "not_fit", "note": "ideas and advice only, not a real project" },
+  "T07": { "classification": "not_fit", "note": "needs it before Diwali, about 3 weeks away" },
+  "T09": { "classification": "complaint", "note": "existing client, angry" },
+  "T10": { "classification": "not_fit", "note": "1BHK Kharadi, volunteered 1-1.5 lakh budget too low" },
+  "T11": { "classification": "qualified", "note": "rented 2BHK Baner, no structural work" },
+  "T14": { "classification": "qualified", "note": "son calling for parents, Hadapsar; decision-maker note expected" },
+  "T19": { "classification": "not_fit", "note": "restaurant, out of scope" }
+}
