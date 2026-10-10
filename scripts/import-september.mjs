@@ -27,6 +27,7 @@ function parseMeta(meta) {
 
 for (const t of transcripts) {
   if (cache[t.id]) continue;
+  if (process.env.ALLOW_PARTIAL && !/MISSED CALL/i.test(t.meta)) continue; // no API calls in partial mode
   if (/MISSED CALL/i.test(t.meta)) {
     cache[t.id] = {
       classification: "unclear",
@@ -57,10 +58,11 @@ for (const t of transcripts) {
 writeFileSync(CACHE, JSON.stringify(cache, null, 1));
 
 const missing = transcripts.filter((t) => !cache[t.id]).map((t) => t.id);
-if (missing.length) throw new Error(`Not classified: ${missing.join(", ")}. Re-run to resume.`);
+if (missing.length && !process.env.ALLOW_PARTIAL) throw new Error(`Not classified: ${missing.join(", ")}. Re-run to resume, or set ALLOW_PARTIAL=1.`);
+if (missing.length) console.log(`Partial import, skipping: ${missing.join(", ")}. Re-run later to add them (SQL uses on conflict do nothing).`);
 
 const q = (s) => `'${String(s ?? "").replace(/'/g, "''")}'`;
-const rows = transcripts.map((t) => {
+const rows = transcripts.filter((t) => cache[t.id]).map((t) => {
   const m = parseMeta(t.meta);
   const c = cache[t.id];
   return `(${q(t.id)}, '${m.iso}', ${m.afterHours}, ${m.durationSec}, ${q(c.classification)}, ${q(c.fit_reason)}, ${c.asked_pricing}, ${q(c.handoff_note)}, ${q(t.transcript)})`;
