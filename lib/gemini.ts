@@ -93,23 +93,38 @@ booked_slot: ISO 8601 date-time (Asia/Kolkata) only if a consultation slot was a
 Return JSON only.`;
 }
 
-export async function classify(transcript: string, callDateIso: string): Promise<ClassifyOutput> {
-  const key = process.env.GEMINI_API_KEY;
-  const model = process.env.GEMINI_MODEL;
-  if (!key || !model) throw new Error("GEMINI_API_KEY / GEMINI_MODEL not set");
-
+/** One bounded attempt: a slow or overloaded model must never run past Vercel's 60s limit. */
+async function callModel(model: string, key: string, body: unknown): Promise<any> {
   const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent`, {
     method: "POST",
     headers: { "content-type": "application/json", "x-goog-api-key": key },
-    body: JSON.stringify({
-      systemInstruction: { parts: [{ text: systemPrompt() }] },
-      contents: [{ role: "user", parts: [{ text: `Call date: ${callDateIso}\n\nTranscript:\n${transcript}` }] }],
-      generationConfig: { responseMimeType: "application/json", responseSchema: RESPONSE_SCHEMA, temperature: 0 },
-    }),
+    body: JSON.stringify(body),
+    signal: AbortSignal.timeout(22_000),
   });
-  if (!res.ok) throw new Error(`Gemini ${res.status}: ${(await res.text()).slice(0, 300)}`);
+  if (!res.ok) throw new Error(`Gemini ${model} ${res.status}: ${(await res.text()).slice(0, 200)}`);
+  return res.json();
+}
 
-  const data = await res.json();
+export async function classify(transcript: string, callDateIso: string, hint?: string | null): Promise<ClassifyOutput> {
+  const key = process.env.GEMINI_API_KEY;
+  const model = process.env.GEMINI_MODEL;
+  if (!key || !model) throw new Error("GEMINI_API_KEY / GEMINI_MODEL not set");
+  const fallback = process.env.GEMINI_FALLBACK_MODEL || "gemini-3.1-flash-lite";
+
+  const body = {
+    systemInstruction: { parts: [{ text: systemPrompt() }] },
+    contents: [{ role: "user", parts: [{ text: `Call date: ${callDateIso}\n\nTranscript:\n${transcript}${hint ? `\n\nVoice platform note on the agreed appointment (use only to resolve booked_slot): ${hint}` : ""}` }] }],
+    generationConfig: { responseMimeType: "application/json", responseSchema: RESPONSE_SCHEMA, temperature: 0 },
+  };
+
+  let data: any;
+  try {
+    data = await callModel(model, key, body);
+  } catch (e) {
+    if (fallback === model) throw e;
+    console.error("[gemini] primary failed, trying fallback:", (e as Error).message);
+    data = await callModel(fallback, key, body);
+  }
   const text: string | undefined = (data?.candidates?.[0]?.content?.parts ?? []).filter((p: any) => !p.thought && p.text).map((p: any) => p.text).join("");
   if (!text) throw new Error("Gemini returned no content");
   const result = JSON.parse(text) as LeadResult;

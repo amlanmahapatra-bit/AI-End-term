@@ -69,7 +69,8 @@ export async function handlePostProcessing(ev: VaaniEvent) {
   // Never lose a lead: if classification fails, log it and send the raw transcript to the front desk.
   let out;
   try {
-    out = await classify(ev.transcriptRaw, startedAt ?? new Date().toISOString());
+    const appt = (ev.entities as any)?.["Appointment Schedule"];
+    out = await classify(ev.transcriptRaw, startedAt ?? new Date().toISOString(), typeof appt === "string" ? appt : null);
   } catch (e) {
     log("classification failed", e);
     await emailFrontDesk(`[Needs human] Aangan call could not be classified`, `AI step failed: ${(e as Error).message}\n\n${rawForDesk}`).catch((x) => log("front desk email failed", x));

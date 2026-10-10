@@ -61,9 +61,9 @@ export function parseVaani(body: any): VaaniEvent {
   const dur = pick(d, "call_duration", "duration_ms");
   return {
     event,
-    callId: String(pick(d, "call_id", "callId", "session_id", "sessionId", "call_uuid", "uuid", "id") ?? ""),
+    callId: String(pick(d, "call_id", "callId", "session_id", "sessionId", "call_uuid", "room_name", "uuid", "id") ?? ""),
     callerNumber: pick(d, "caller_number", "from_number", "from", "customer_number", "phone_number"),
-    startedAt: pick(d, "call_started_at", "start_time", "started_at", "call_start_time"),
+    startedAt: pick(d, "picked_up_at", "call_started_at", "start_time", "started_at", "call_start_time"),
     endedAt: pick(d, "call_ended_at", "end_time", "ended_at", "call_end_time"),
     durationMs: dur !== null && Number.isFinite(Number(dur)) ? Number(dur) : null,
     transcriptRaw,
@@ -74,13 +74,13 @@ export function parseVaani(body: any): VaaniEvent {
   };
 }
 
-/** call_duration is milliseconds and sometimes missing: fall back to end minus start. */
-export function durationSec(startedAt: string | null, endedAt: string | null, durationMs: number | null): number {
-  if (durationMs && durationMs > 0) return Math.round(durationMs / 1000);
+/** Prefer real timestamps; call_duration unit varies (seconds or ms), so treat small values as seconds. */
+export function durationSec(startedAt: string | null, endedAt: string | null, duration: number | null): number {
   if (startedAt && endedAt) {
     const diff = (Date.parse(endedAt) - Date.parse(startedAt)) / 1000;
     if (Number.isFinite(diff) && diff > 0) return Math.round(diff);
   }
+  if (duration && duration > 0) return Math.round(duration < 7200 ? duration : duration / 1000);
   return 0;
 }
 
