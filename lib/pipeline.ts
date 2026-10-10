@@ -1,6 +1,7 @@
 import { db } from "./supabase";
 import { classify } from "./gemini";
-import { emailDesigner, emailFrontDesk } from "./email";
+import { emailCaller, emailDesigner, emailFrontDesk } from "./email";
+import { buildInvite } from "./ics";
 import { createDeal } from "./hubspot";
 import { signedLink } from "./links";
 import { durationSec, isAfterHours, type VaaniEvent } from "./vaani";
@@ -95,6 +96,18 @@ export async function handlePostProcessing(ev: VaaniEvent) {
     const designer = await pickDesigner(r.segment).catch(() => null);
     if (designer) update.designer_id = designer.id;
 
+    const organizer = (process.env.EMAIL_FROM ?? "").match(/<(.+)>/)?.[1] ?? process.env.EMAIL_FROM ?? "";
+    const callerEmail = r.lead.email && /^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(r.lead.email) ? r.lead.email : null;
+    const ics = bookedSlot
+      ? buildInvite({
+          uid: row.id,
+          startIso: bookedSlot,
+          organizerEmail: organizer,
+          callerName: r.lead.name,
+          attendees: [...(designer?.email ? [{ name: designer.name, email: designer.email }] : []), ...(callerEmail ? [{ name: r.lead.name, email: callerEmail }] : [])],
+        })
+      : null;
+
     const jobs = await Promise.allSettled([
       designer?.email
         ? emailDesigner({
@@ -107,9 +120,11 @@ export async function handlePostProcessing(ev: VaaniEvent) {
             rescheduleUrl: signedLink("reschedule", row.id, designer.id),
             bookingUrl: process.env.CALCOM_BOOKING_URL ?? null,
             summary: ev.summary,
+            ics,
           })
         : Promise.reject(new Error("no designer with an email")),
       createDeal(r, r.handoff_note),
+      ics && callerEmail && bookedSlot ? emailCaller({ to: callerEmail, name: r.lead.name, slotIso: bookedSlot, ics }) : Promise.resolve(null),
     ]);
     if (jobs[0].status === "fulfilled") update.email_message_id = jobs[0].value;
     else {
@@ -118,6 +133,10 @@ export async function handlePostProcessing(ev: VaaniEvent) {
     }
     if (jobs[1].status === "fulfilled") update.hubspot_deal_id = jobs[1].value;
     else log("hubspot failed", jobs[1].reason);
+    // Caller invite is best-effort; record the outcome so the front desk can follow up by phone.
+    const invite = jobs[2].status === "fulfilled" ? (jobs[2].value ? "sent" : callerEmail ? "no_slot" : "no_email") : "failed";
+    if (jobs[2].status === "rejected") log("caller invite failed", jobs[2].reason);
+    update.collected = { ...(update.collected as object), invite };
   } else if (r.classification === "complaint") {
     await emailFrontDesk(`[Complaint] Call from ${base.caller_number ?? "unknown"} needs a human`, `${r.handoff_note}\n\n${rawForDesk}`).catch((x) => log("front desk email failed", x));
   }

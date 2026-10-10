@@ -19,6 +19,7 @@ export interface LeadResult {
     volunteered_budget: string | null;
     source: string | null;
     phone: string | null;
+    email: string | null;
   };
   booked_slot: string | null;
   handoff_note: string;
@@ -52,8 +53,9 @@ const RESPONSE_SCHEMA = {
         volunteered_budget: nullableString,
         source: nullableString,
         phone: nullableString,
+        email: nullableString,
       },
-      required: ["name", "property_type", "area_sqft", "location", "scope", "timeline", "decision_maker", "volunteered_budget", "source", "phone"],
+      required: ["name", "property_type", "area_sqft", "location", "scope", "timeline", "decision_maker", "volunteered_budget", "source", "phone", "email"],
     },
     booked_slot: nullableString,
     handoff_note: { type: "STRING" },
@@ -83,6 +85,8 @@ THE CUT (non-negotiable)
 - asked_pricing is true if the caller asked about price/cost at any point.
 
 handoff_note: exactly 8 short lines for a designer reading on a phone. Cover: who, what space and size, where, scope, timeline, decision-maker, caller's own words on budget if any (attributed), and the recommended next step. For not_fit/complaint/unclear, say why and what a human should do (if anything). Plain text, no markdown.
+
+lead.email: the caller's own email address only if it was clearly given or spelled out in the call; otherwise null. Never guess or complete a partial address.
 
 booked_slot: ISO 8601 date-time (Asia/Kolkata) only if a consultation slot was actually agreed in the call, using the call date given below to resolve words like "tomorrow". Otherwise null.
 

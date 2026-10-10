@@ -7,13 +7,15 @@ const esc = (s: unknown) =>
     .replace(/>/g, "&gt;")
     .replace(/"/g, "&quot;");
 
-async function send(to: string, subject: string, html: string, text: string): Promise<string | null> {
+interface Attachment { filename: string; content: string; content_type?: string }
+
+async function send(to: string, subject: string, html: string, text: string, attachments?: Attachment[]): Promise<string | null> {
   const key = process.env.RESEND_API_KEY;
   if (!key) throw new Error("RESEND_API_KEY not set");
   const res = await fetch("https://api.resend.com/emails", {
     method: "POST",
     headers: { authorization: `Bearer ${key}`, "content-type": "application/json" },
-    body: JSON.stringify({ from: process.env.EMAIL_FROM, to: [to], subject, html, text }),
+    body: JSON.stringify({ from: process.env.EMAIL_FROM, to: [to], subject, html, text, ...(attachments ? { attachments } : {}) }),
   });
   if (!res.ok) throw new Error(`Resend ${res.status}: ${(await res.text()).slice(0, 300)}`);
   return (await res.json()).id ?? null;
@@ -32,6 +34,7 @@ export async function emailDesigner(a: {
   rescheduleUrl: string;
   bookingUrl: string | null;
   summary: string | null;
+  ics?: string | null;
 }): Promise<string | null> {
   const { r } = a;
   const who = r.lead.name ?? "New caller";
@@ -60,7 +63,17 @@ export async function emailDesigner(a: {
 <p style="margin:16px 0 4px">${btn(a.claimUrl, "Claim this lead", "#0f766e")}${btn(a.rescheduleUrl, "Reschedule", "#b45309")}${a.bookingUrl ? btn(a.bookingUrl, "Booking link", "#334155") : ""}</p>
 <p style="color:#777;font-size:12px">Why it qualified: ${esc(r.fit_reason)}. Pricing is for you to discuss at the consultation; the agent quoted none.</p></div>`;
   const text = `${subject}\n\n${r.handoff_note}\n\nClaim: ${a.claimUrl}\nReschedule: ${a.rescheduleUrl}${a.bookingUrl ? `\nBooking: ${a.bookingUrl}` : ""}`;
-  return send(a.to, subject, html, text);
+  const att = a.ics ? [{ filename: "consultation.ics", content: Buffer.from(a.ics).toString("base64"), content_type: "text/calendar; method=REQUEST" }] : undefined;
+  return send(a.to, subject, html, text, att);
+}
+
+/** Confirmation to the caller with a calendar invite. Never mentions price; no promise of a site visit. */
+export async function emailCaller(a: { to: string; name: string | null; slotIso: string; ics: string }): Promise<string | null> {
+  const when = new Date(a.slotIso).toLocaleString("en-IN", { timeZone: "Asia/Kolkata", dateStyle: "full", timeStyle: "short" });
+  const subject = `Your Aangan Studio consultation: ${when} IST`;
+  const text = `Hi ${a.name ?? "there"},\n\nThanks for calling Aangan Studio. Your consultation with one of our designers is booked for ${when} (IST). The calendar invite is attached.\n\nYour designer will confirm the details and walk you through next steps.\n\nAangan Studio, Pune`;
+  const html = `<div style="font-family:system-ui,sans-serif;max-width:520px"><p>Hi ${esc(a.name ?? "there")},</p><p>Thanks for calling Aangan Studio. Your consultation with one of our designers is booked for <b>${esc(when)} (IST)</b>. The calendar invite is attached.</p><p>Your designer will confirm the details and walk you through next steps.</p><p>Aangan Studio, Pune</p></div>`;
+  return send(a.to, subject, html, text, [{ filename: "consultation.ics", content: Buffer.from(a.ics).toString("base64"), content_type: "text/calendar; method=REQUEST" }]);
 }
 
 /** Complaints, and any failure where the lead must not be lost. A human acts on these. */
